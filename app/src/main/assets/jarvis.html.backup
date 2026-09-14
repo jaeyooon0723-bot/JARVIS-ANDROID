@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>JARVIS HUD V3</title>
+<style>
+*{box-sizing:border-box}
+html,body{
+margin:0;width:100%;height:100%;overflow:hidden;
+background:#02070a;color:#77f6ff;
+font-family:"Courier New",monospace;
+}
+body:before{
+content:"";position:absolute;inset:0;
+background:
+linear-gradient(rgba(0,220,255,.035) 1px,transparent 1px),
+linear-gradient(90deg,rgba(0,220,255,.035) 1px,transparent 1px);
+background-size:26px 26px;
+pointer-events:none
+}
+.hud{position:relative;width:100%;height:100%;overflow:hidden}
+.scan{
+position:absolute;inset:0;
+background:linear-gradient(transparent 49.7%,rgba(80,240,255,.025) 50%,transparent 50.3%);
+background-size:100% 8px;pointer-events:none
+}
+
+/* TOP */
+.top{
+position:absolute;left:3%;right:3%;top:3%;
+display:flex;justify-content:space-between;
+font-size:10px;letter-spacing:2px;color:#54eaff
+}
+.top .right{text-align:right}
+
+/* SIDE PANELS */
+.panel{
+position:absolute;top:15%;bottom:13%;width:21%;
+border:1px solid rgba(70,235,255,.35);
+background:linear-gradient(90deg,rgba(0,20,27,.78),rgba(0,8,13,.18));
+padding:14px;
+box-shadow:0 0 18px rgba(0,220,255,.06) inset
+}
+.left{left:2.5%}
+.right{right:2.5%}
+
+.panel:before,.panel:after{
+content:"";position:absolute;width:30px;height:8px;
+border-top:1px solid #64efff;
+}
+.panel:before{top:-1px;left:-1px}
+.panel:after{bottom:-1px;right:-1px;border-top:0;border-bottom:1px solid #64efff}
+
+.label{
+font-size:9px;letter-spacing:2px;color:#48e9ff;
+margin-bottom:7px
+}
+.value{
+font-size:16px;letter-spacing:3px;color:#c8ffff;
+text-shadow:0 0 8px #35eaff
+}
+.line{
+height:1px;background:linear-gradient(90deg,#4cefff,transparent);
+margin:13px 0
+}
+.item{
+display:flex;justify-content:space-between;
+font-size:8px;margin:10px 0;color:#5e969f
+}
+.item b{font-weight:normal;color:#bdfaff}
+.meter{
+height:4px;border:1px solid #236f78;margin:5px 0 11px;
+}
+.meter i{
+display:block;height:100%;width:78%;
+background:#48eaff;box-shadow:0 0 8px #48eaff
+}
+
+/* CENTER */
+.center{
+position:absolute;left:50%;top:53%;
+width:min(58vw,58vh);height:min(58vw,58vh);
+transform:translate(-50%,-50%)
+}
+.core{
+position:absolute;inset:36%;
+border-radius:50%;
+background:radial-gradient(circle,#dfffff 0,#64efff 12%,#12b9d8 25%,rgba(0,80,110,.45) 47%,transparent 70%);
+box-shadow:
+0 0 15px #76f4ff,
+0 0 35px rgba(0,225,255,.75),
+0 0 80px rgba(0,130,255,.28);
+animation:pulse 2s infinite
+}
+.ring{
+position:absolute;border-radius:50%;
+left:50%;top:50%;
+transform:translate(-50%,-50%);
+border:1px solid rgba(80,240,255,.75)
+}
+.r1{width:98%;height:98%;border-style:dashed;animation:spin 24s linear infinite}
+.r2{width:88%;height:88%;border-color:#63eaff66;animation:spinrev 16s linear infinite}
+.r3{width:75%;height:75%;border-width:2px;border-color:#42ddff88;animation:spin 11s linear infinite}
+.r4{width:61%;height:61%;border-style:dotted;animation:spinrev 8s linear infinite}
+.r5{width:45%;height:45%;border-color:#9ef8ffcc}
+
+/* segmented arcs */
+.arc{
+position:absolute;left:50%;top:50%;
+border-radius:50%;
+transform:translate(-50%,-50%);
+border:7px solid transparent;
+}
+.a1{
+width:102%;height:102%;
+border-top-color:#53efff;
+border-right-color:#53efff44;
+transform:translate(-50%,-50%) rotate(25deg);
+animation:spin 7s linear infinite
+}
+.a2{
+width:82%;height:82%;
+border-left-color:#7c8cff;
+border-bottom-color:#42eaff;
+transform:translate(-50%,-50%) rotate(-35deg);
+animation:spinrev 9s linear infinite
+}
+.a3{
+width:69%;height:69%;
+border-top-color:#d6ffff;
+transform:translate(-50%,-50%) rotate(70deg);
+animation:spin 5s linear infinite
+}
+
+/* ticks */
+.ticks{
+position:absolute;inset:4%;
+border-radius:50%;
+background:repeating-conic-gradient(
+from 0deg,
+rgba(79,240,255,.8) 0deg 1deg,
+transparent 1deg 8deg
+);
+-webkit-mask:radial-gradient(circle,transparent 70%,#000 70.5%,#000 73%,transparent 73.5%);
+mask:radial-gradient(circle,transparent 70%,#000 70.5%,#000 73%,transparent 73.5%);
+animation:spinrev 30s linear infinite
+}
+
+/* orbit nodes */
+.node{
+position:absolute;left:50%;top:50%;
+width:7px;height:7px;border-radius:50%;
+background:#a9ffff;box-shadow:0 0 10px #63f5ff
+}
+.n1{transform:translate(-50%,-50%) translateX(43%)}
+.n2{transform:translate(-50%,-50%) translateY(-43%)}
+.n3{transform:translate(-50%,-50%) translateX(-43%)}
+.n4{transform:translate(-50%,-50%) translateY(43%)}
+
+/* HUD labels around core */
+.mark{
+position:absolute;font-size:8px;letter-spacing:1px;color:#66bec8;
+text-shadow:0 0 5px #00d9ff
+}
+.m1{left:4%;top:47%}
+.m2{right:3%;top:47%;text-align:right}
+.m3{left:45%;top:4%}
+.m4{left:44%;bottom:4%}
+
+/* bottom */
+.bottom{
+position:absolute;left:3%;right:3%;bottom:3%;
+display:flex;justify-content:space-between;
+font-size:8px;color:#47838c;letter-spacing:1px
+}
+.state{
+position:absolute;left:50%;top:8.5%;
+transform:translateX(-50%);
+text-align:center;
+letter-spacing:3px
+}
+.state .small{font-size:8px;color:#4d929c}
+.state .big{
+font-size:14px;color:#cfffff;
+text-shadow:0 0 10px #4cefff
+}
+
+/* waveform */
+.wave{
+position:absolute;left:50%;bottom:10%;
+transform:translateX(-50%);
+width:22%;height:38px;
+display:flex;justify-content:center;align-items:center;gap:3px
+}
+.wave i{
+display:block;width:3px;height:8px;background:#52ecff;
+box-shadow:0 0 6px #52ecff;
+animation:wave 1s infinite alternate
+}
+.wave i:nth-child(2){animation-delay:.1s}
+.wave i:nth-child(3){animation-delay:.2s}
+.wave i:nth-child(4){animation-delay:.3s}
+.wave i:nth-child(5){animation-delay:.4s}
+.wave i:nth-child(6){animation-delay:.3s}
+.wave i:nth-child(7){animation-delay:.2s}
+.wave i:nth-child(8){animation-delay:.1s}
+
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes spinrev{to{transform:translate(-50%,-50%) rotate(-360deg)}}
+@keyframes pulse{
+50%{transform:scale(1.08);filter:brightness(1.25)}
+}
+@keyframes wave{
+from{height:6px}to{height:30px}
+}
+</style>
+</head>
+
+<body>
+<div class="hud">
+<div class="scan"></div>
+
+<div class="top">
+<div>JARVIS // SYSTEM CORE</div>
+<div class="right">ANDROID HUD V3<br>SECURE LINK</div>
+</div>
+
+<div class="state">
+<div class="small">JARVIS SYSTEM</div>
+<div id="state" class="big">STANDBY</div>
+</div>
+
+<div class="panel left">
+<div class="label">SYSTEM STATUS</div>
+<div class="value">ONLINE</div>
+<div class="line"></div>
+
+<div class="item"><span>CORE</span><b>ACTIVE</b></div>
+<div class="meter"><i style="width:94%"></i></div>
+
+<div class="item"><span>POWER</span><b>98.7%</b></div>
+<div class="meter"><i style="width:87%"></i></div>
+
+<div class="item"><span>MEMORY</span><b>SYNC</b></div>
+<div class="item"><span>VISION</span><b>READY</b></div>
+<div class="item"><span>NETWORK</span><b>SECURE</b></div>
+
+<div class="line"></div>
+<div class="label">PROCESS</div>
+<div class="item"><span>THREADS</span><b>12</b></div>
+<div class="item"><span>LATENCY</span><b>014 MS</b></div>
+</div>
+
+<div class="center" id="center">
+<div class="ticks"></div>
+<div class="ring r1"></div>
+<div class="ring r2"></div>
+<div class="ring r3"></div>
+<div class="ring r4"></div>
+<div class="ring r5"></div>
+<div class="arc a1"></div>
+<div class="arc a2"></div>
+<div class="arc a3"></div>
+<div class="core"></div>
+<div class="node n1"></div>
+<div class="node n2"></div>
+<div class="node n3"></div>
+<div class="node n4"></div>
+</div>
+
+<div class="mark m1">SYS::01</div>
+<div class="mark m2">CORE::ACTIVE</div>
+<div class="mark m3">NEURAL LINK</div>
+<div class="mark m4">100011 // 010101</div>
+
+<div class="panel right">
+<div class="label">TELEMETRY</div>
+<div id="mode" class="value">IDLE</div>
+<div class="line"></div>
+
+<div class="item"><span>SIGNAL</span><b>STABLE</b></div>
+<div class="item"><span>LINK</span><b>CONNECTED</b></div>
+<div class="item"><span>CHANNEL</span><b>LOCAL</b></div>
+
+<div class="line"></div>
+<div class="label">ANALYSIS</div>
+<div class="item"><span>SCAN</span><b>READY</b></div>
+<div class="item"><span>DATA</span><b>LIVE</b></div>
+<div class="item"><span>SECURITY</span><b>HIGH</b></div>
+
+<div class="line"></div>
+<div class="label">SIGNAL</div>
+<div class="wave">
+<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+</div>
+</div>
+
+<div class="bottom">
+<div>JARVIS CORE // v3.0</div>
+<div id="clock">00:00:00</div>
+<div>STATUS :: NOMINAL</div>
+</div>
+</div>
+
+<script>
+const states=[
+["STANDBY","IDLE"],
+["LISTENING","LISTEN"],
+["THINKING","PROCESS"],
+["SPEAKING","OUTPUT"]
+];
+let index=0;
+
+document.getElementById("center").addEventListener("click",()=>{
+index=(index+1)%states.length;
+document.getElementById("state").textContent=states[index][0];
+document.getElementById("mode").textContent=states[index][1];
+});
+
+function clock(){
+document.getElementById("clock").textContent=
+new Date().toLocaleTimeString("en-GB",{hour12:false});
+}
+setInterval(clock,1000);
+clock();
+</script>
+</body>
+</html>
